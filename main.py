@@ -4,6 +4,36 @@ from PyQt5 import uic
 import paho.mqtt.client as mqtt
 import sys
 import os
+import requests
+from flask import Flask, jsonify
+# app = Flask(__name__)
+
+# @app.route('/send-node-data', methods=['GET'])
+# def send_node_data():
+#     # Data to send
+#     payload = {
+#         "nodeValue": 123,
+#         "activityData": {
+#             "motion": True,
+#             "temperature": 22.5,
+#             "humidity": 1
+#         }
+#     }
+#
+#     # URL of the backend server
+#     backend_url = "http://localhost:3000/api/node/store"
+#
+#     try:
+#         # Sending POST request
+#         response = requests.post(backend_url, json=payload)
+#
+#         # Return backend's response to the client
+#         return jsonify({
+#             "status_code": response.status_code,
+#             "response_data": response.json()
+#         })
+#     except requests.exceptions.RequestException as e:
+#         return jsonify({"error": str(e)}), 500
 
 
 class MainApp(QMainWindow):
@@ -93,6 +123,21 @@ class MainApp(QMainWindow):
 
         self.incomingMessageTable.setItem(row_position, 0, QTableWidgetItem(message.topic))
         self.incomingMessageTable.setItem(row_position, 1, QTableWidgetItem(message.payload.decode()))
+        payload = {
+            "nodeValue" : 1122234,
+            "activityData": message.payload.decode()
+        }
+
+        # URL of the backend server
+        backend_url = "http://localhost:3000/api/node/store"
+
+        try:
+            # Sending POST request
+            print("Sending")
+            response = requests.post(backend_url, json=payload)
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": str(e)}), 500
+
 
     def send_message_button_clicked(self, *args):
         """publish a message to a topic"""
@@ -124,3 +169,55 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# Single File code without UI :
+# import paho.mqtt.client as mqtt
+# import requests
+# import json
+#
+# # Hardcoded MQTT broker details
+# BROKER_ADDRESS = "your-broker-address"
+# BROKER_PORT = 1883  # Default MQTT port
+# SUBSCRIBE_TOPIC = "your/subscribe/topic"
+# BACKEND_URL = "http://localhost:3000/api/node/store"
+#
+# # Define the MQTT callbacks
+# def on_connect(client, userdata, flags, rc):
+#     if rc == 0:
+#         print("Connected to broker.")
+#         client.subscribe(SUBSCRIBE_TOPIC)
+#         print(f"Subscribed to topic: {SUBSCRIBE_TOPIC}")
+#     else:
+#         print(f"Connection failed with code {rc}")
+#
+# def on_message(client, userdata, message):
+#     print(f"Received message: {message.payload.decode()} on topic: {message.topic}")
+#     payload = {
+#         "nodeValue": 1122234,
+#         "activityData": json.loads(message.payload.decode())
+#     }
+#     try:
+#         response = requests.post(BACKEND_URL, json=payload)
+#         print(f"Data sent to backend. Response status: {response.status_code}")
+#     except requests.exceptions.RequestException as e:
+#         print(f"Error posting to backend: {str(e)}")
+#
+# # Create the MQTT client instance
+# client = mqtt.Client()
+#
+# # Assign the callbacks
+# client.on_connect = on_connect
+# client.on_message = on_message
+#
+# # Connect to the broker
+# try:
+#     print(f"Connecting to MQTT broker at {BROKER_ADDRESS}:{BROKER_PORT}")
+#     client.connect(BROKER_ADDRESS, BROKER_PORT, 60)
+# except Exception as e:
+#     print(f"Error connecting to MQTT broker: {str(e)}")
+#     exit()
+#
+# # Start the loop
+# client.loop_forever()
+#
